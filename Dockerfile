@@ -25,8 +25,16 @@ RUN npm install
 # Copie le reste du code source
 COPY . .
 
+# # Copie le script entrypoint dans l'image
+# COPY entrypoint.sh /entrypoint.sh
+
+# # Rends le script exécutable
+# RUN chmod +x /entrypoint.sh
+
 # Port exposé
 EXPOSE 5000
 
 # Démarrage en mode debug (hot reload)
+# ENTRYPOINT ["/entrypoint.sh"]
+
 CMD ["flask", "--app=app", "--debug", "run", "--host=0.0.0.0"]

@@ -12,11 +12,11 @@ services:
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - .:/app
-    command: bash -c "npm run watch & flask --debug run --host=0.0.0.0"
+    # Remplace command par entrypoint ou garde command si tu veux lancer 2 trucs (npm + flask)
+    # entrypoint: ["/entrypoint.sh"]
     depends_on:
       - db
       - redis
-
   db:
     image: postgres:15
     restart: always

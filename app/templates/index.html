@@ -5,13 +5,5 @@
   <p>Ceci est la page d’accueil de votre app Flask avec Tailwind + HTMX !</p>
 
 
-{% if current_user.is_authenticated %}
-    <form action="{{ url_for('auth.logout') }}" method="POST">
-      <button type="submit" style="padding: 8px 16px; background-color: red; color: white; border-radius: 4px;">
-        Déconnexion
-      </button>
-    </form>
-{% else %}
-    <p>Vous n'êtes pas connecté. <a href="{{ url_for('auth.login') }}">Connectez-vous</a></p>
-{% endif %}
+
 {% endblock %}

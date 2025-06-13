@@ -25,7 +25,7 @@ def login():
         next_page = request.args.get('next')
         return redirect(next_page or url_for('main.index'))
 
-    return render_template('login.html')
+    return render_template('auth/login.html')
 
 
 @auth.route('/logout', methods=['POST'])
@@ -74,5 +74,4 @@ def register():
         flash('Inscription réussie ! Connectez-vous maintenant.', 'success')
         return redirect(url_for('auth.login'))
 
-    return render_template('register.html')
-
+    return render_template('auth/register.html')
