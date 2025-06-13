@@ -1,5 +1,8 @@
 FROM python:3.11
 
+# Assure que les logs s'affichent en temps réel
+ENV PYTHONUNBUFFERED=1
+
 # Installer dépendances système + Node.js 20
 RUN apt-get update && \
     apt-get install -y curl gnupg ca-certificates lsb-release && \
@@ -9,21 +12,21 @@ RUN apt-get update && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Définir le répertoire de travail
+# Crée le dossier de l'application
 WORKDIR /app
 
-# Installer les dépendances Python
+# Copie des fichiers pour installer les dépendances
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copier les fichiers de l'app
+COPY package*.json ./
+RUN npm install
+
+# Copie le reste du code source
 COPY . .
 
-# Installer les dépendances NPM et compiler Tailwind
-RUN npm install && npm run build
-
-# Exposer le port de Flask
+# Port exposé
 EXPOSE 5000
 
-# Démarrer l'application Flask
-CMD ["flask", "run", "--host=0.0.0.0", "--reload"]
+# Démarrage en mode debug (hot reload)
+CMD ["flask", "--app=app", "--debug", "run", "--host=0.0.0.0"]

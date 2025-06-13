@@ -6,12 +6,13 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FLASK_APP=app
+      - FLASK_APP=app.py
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - .:/app
+    command: bash -c "npm run watch & flask --debug run --host=0.0.0.0"
     depends_on:
       - db
       - redis
@@ -23,7 +24,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"  # port externe modifié pour éviter les conflits
+      - "5433:5432"
 
   redis:
     image: redis:7
