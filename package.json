@@ -1,0 +1,11 @@
+{
+  "name": "flask-app",
+  "devDependencies": {
+    "tailwindcss": "^3.3.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  },
+  "scripts": {
+    "build": "npx tailwindcss -i ./app/static/css/input.css -o ./app/static/css/style.css --minify"
+  }
+}
