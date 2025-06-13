@@ -27,14 +27,12 @@ def login():
 
     return render_template('auth/login.html')
 
-
 @auth.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
     flash('Vous avez été déconnecté avec succès.', 'success')
-    return redirect(url_for('auth.login'))
-
+    return redirect(url_for('main.index'))  # Redirige vers l'index après déconnexion
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
