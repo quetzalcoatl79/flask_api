@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Inscription{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+  <div class="max-w-lg w-full bg-white p-8 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Créer un compte</h2>
+
+    <form method="post" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="first_name" class="block text-sm font-medium text-gray-700">Prénom</label>
+          <input id="first_name" name="first_name" type="text" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label for="last_name" class="block text-sm font-medium text-gray-700">Nom</label>
+          <input id="last_name" name="last_name" type="text" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+        </div>
+      </div>
+
+      <div>
+        <label for="username" class="block text-sm font-medium text-gray-700">Nom d'utilisateur</label>
+        <input id="username" name="username" type="text" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <input id="email" name="email" type="email" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+
+      <div>
+        <label for="address" class="block text-sm font-medium text-gray-700">Adresse (facultatif)</label>
+        <input id="address" name="address" type="text" class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+
+      <div>
+        <label for="phone" class="block text-sm font-medium text-gray-700">Téléphone (facultatif)</label>
+        <input id="phone" name="phone" type="text" class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+        <input id="password" name="password" type="password" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+
+      <div>
+        <label for="password_confirm" class="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
+        <input id="password_confirm" name="password_confirm" type="password" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+      </div>
+
+      <div>
+        <button type="submit"
+                class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 shadow">
+          S'inscrire
+        </button>
+      </div>
+
+      <div class="text-center text-sm text-gray-600">
+        Vous avez déjà un compte ? <a href="{{ url_for('auth.login') }}" class="text-indigo-600 hover:underline">Connexion</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

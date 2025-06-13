@@ -1,0 +1,3 @@
+docker-compose run --rm web flask db migrate -m "Ajout champs utilisateur"
+
+docker-compose run --rm web flask db upgrade

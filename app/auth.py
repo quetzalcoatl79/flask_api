@@ -6,7 +6,6 @@ from .extensions import db
 
 auth = Blueprint('auth', __name__)
 
-
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -28,8 +27,6 @@ def login():
 
     return render_template('login.html')
 
-
-
 @auth.route('/logout')
 @login_required
 def logout():
@@ -37,14 +34,18 @@ def logout():
     flash('Déconnecté avec succès', 'success')
     return redirect(url_for('auth.login'))
 
-
-@auth.route('/signin', methods=['GET', 'POST'])
+@auth.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
 
     if request.method == 'POST':
         username = request.form.get('username')
+        email = request.form.get('email')
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        address = request.form.get('address') or None
+        phone = request.form.get('phone') or None
         password = request.form.get('password')
         password_confirm = request.form.get('password_confirm')
 
@@ -52,19 +53,24 @@ def register():
             flash('Les mots de passe ne correspondent pas.', 'error')
             return redirect(url_for('auth.register'))
 
-        user_exists = User.query.filter_by(username=username).first()
-        if user_exists:
-            flash('Ce nom d’utilisateur est déjà pris.', 'error')
+        if User.query.filter((User.username == username) | (User.email == email)).first():
+            flash('Nom d’utilisateur ou email déjà utilisé.', 'error')
             return redirect(url_for('auth.register'))
 
         new_user = User(
             username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            address=address,
+            phone=phone,
             password_hash=generate_password_hash(password)
         )
         db.session.add(new_user)
         db.session.commit()
 
-        flash('Inscription réussie, vous pouvez maintenant vous connecter.', 'success')
+        flash('Inscription réussie ! Connectez-vous maintenant.', 'success')
         return redirect(url_for('auth.login'))
 
-    return render_template('signin.html')
+    return render_template('register.html')
+
