@@ -2,10 +2,12 @@
 {% block title %}Accueil{% endblock %}
 {% block content %}
   {% if current_user.is_authenticated %}
-  <h1 class="text-3xl font-bold mb-4">Bienvenue 👋</h1>
-  <p>Ceci est la page d’accueil de votre app Flask avec Tailwind + HTMX !</p>
+
+    
+    {% include "is_connect/index.html" %}
+
   {%else%}
-  TOTO
+    TOTO
 
   {%endif%}
 

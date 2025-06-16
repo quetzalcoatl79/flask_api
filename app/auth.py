@@ -8,6 +8,7 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
 
@@ -53,7 +54,17 @@ def register():
             flash('Les mots de passe ne correspondent pas.', 'error')
             return redirect(url_for('auth.register'))
 
-        if User.query.filter((User.username == username) | (User.email == email)).first():
+        # verifie que l'utilisateur a un caractere spécial dans son mot de passe
+        if len(password) < 8 or not any(
+            char.isdigit() for char in password
+            ) or not any(char.isalpha() for char in password):
+            flash('Le mot de passe doit contenir au moins 8' 
+                  ' caractères, avec des lettres et des chiffres.', 'error')
+            return redirect(url_for('auth.register'))
+
+        if User.query.filter(
+            (User.username == username) | (User.email == email)
+            ).first():
             flash('Nom d’utilisateur ou email déjà utilisé.', 'error')
             return redirect(url_for('auth.register'))
 
