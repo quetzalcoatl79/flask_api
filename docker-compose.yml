@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  web:
+  backend:
     build: .
     ports:
       - "5000:5000"
@@ -12,11 +12,25 @@ services:
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - .:/app
-    # Remplace command par entrypoint ou garde command si tu veux lancer 2 trucs (npm + flask)
-    # entrypoint: ["/entrypoint.sh"]
     depends_on:
       - db
       - redis
+
+  frontend:
+    working_dir: /app
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:5000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
   db:
     image: postgres:15
     restart: always

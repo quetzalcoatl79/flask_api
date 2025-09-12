@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, jsonify, request
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User
@@ -6,70 +6,123 @@ from .extensions import db
 
 auth = Blueprint('auth', __name__)
 
-@auth.route('/login', methods=['GET', 'POST'])
+@auth.route('/login', methods=['POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return jsonify({
+            'success': True,
+            'message': 'Déjà connecté',
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email
+            }
+        })
 
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Données JSON requises'}), 400
+    
+    username = data.get('username')
+    password = data.get('password')
 
-        user = User.query.filter_by(username=username).first()
-        if not user or not check_password_hash(user.password_hash, password):
-            flash('Identifiants invalides', 'error')
-            return redirect(url_for('auth.login'))
+    if not username or not password:
+        return jsonify({'success': False, 'message': 'Nom d\'utilisateur et mot de passe requis'}), 400
 
-        login_user(user)
-        flash('Connecté avec succès', 'success')
-        next_page = request.args.get('next')
-        return redirect(next_page or url_for('main.index'))
+    user = User.query.filter_by(username=username).first()
+    if not user or not check_password_hash(user.password_hash, password):
+        return jsonify({'success': False, 'message': 'Identifiants invalides'}), 401
 
-    return render_template('auth/login.html')
+    login_user(user)
+    return jsonify({
+        'success': True,
+        'message': 'Connecté avec succès',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name
+        }
+    })
 
 @auth.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
-    flash('Vous avez été déconnecté avec succès.', 'success')
-    return redirect(url_for('main.index'))  # Redirige vers l'index après déconnexion
+    return jsonify({'success': True, 'message': 'Déconnecté avec succès'})
 
-@auth.route('/register', methods=['GET', 'POST'])
+@auth.route('/register', methods=['POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return jsonify({
+            'success': True,
+            'message': 'Déjà connecté',
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email
+            }
+        })
 
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        address = request.form.get('address') or None
-        phone = request.form.get('phone') or None
-        password = request.form.get('password')
-        password_confirm = request.form.get('password_confirm')
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Données JSON requises'}), 400
 
-        if password != password_confirm:
-            flash('Les mots de passe ne correspondent pas.', 'error')
-            return redirect(url_for('auth.register'))
+    username = data.get('username')
+    email = data.get('email')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    address = data.get('address')
+    phone = data.get('phone')
+    password = data.get('password')
+    password_confirm = data.get('password_confirm')
 
-        if User.query.filter((User.username == username) | (User.email == email)).first():
-            flash('Nom d’utilisateur ou email déjà utilisé.', 'error')
-            return redirect(url_for('auth.register'))
+    if not all([username, email, first_name, last_name, password, password_confirm]):
+        return jsonify({'success': False, 'message': 'Tous les champs obligatoires doivent être remplis'}), 400
 
-        new_user = User(
-            username=username,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            address=address,
-            phone=phone,
-            password_hash=generate_password_hash(password)
-        )
-        db.session.add(new_user)
-        db.session.commit()
+    if password != password_confirm:
+        return jsonify({'success': False, 'message': 'Les mots de passe ne correspondent pas'}), 400
 
-        flash('Inscription réussie ! Connectez-vous maintenant.', 'success')
-        return redirect(url_for('auth.login'))
+    if User.query.filter((User.username == username) | (User.email == email)).first():
+        return jsonify({'success': False, 'message': 'Nom d\'utilisateur ou email déjà utilisé'}), 409
 
-    return render_template('auth/register.html')
+    new_user = User(
+        username=username,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        address=address,
+        phone=phone,
+        password_hash=generate_password_hash(password)
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Inscription réussie',
+        'user': {
+            'id': new_user.id,
+            'username': new_user.username,
+            'email': new_user.email,
+            'first_name': new_user.first_name,
+            'last_name': new_user.last_name
+        }
+    })
+
+@auth.route('/status', methods=['GET'])
+def status():
+    if current_user.is_authenticated:
+        return jsonify({
+            'authenticated': True,
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name
+            }
+        })
+    else:
+        return jsonify({'authenticated': False})
