@@ -3,6 +3,7 @@ flask_sqlalchemy
 flask_migrate
 psycopg2-binary
 flask_login
+flask_cors
 redis
 python-dotenv
 watchdog

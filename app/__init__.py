@@ -1,5 +1,5 @@
 from flask import Flask
-from .extensions import db, login_manager, migrate
+from .extensions import db, login_manager, migrate, cors
 from .models import User
 from .auth import auth
 from .routes import main
@@ -16,6 +16,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+    cors.init_app(app)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -23,7 +24,7 @@ def create_app():
 
     login_manager.login_view = "auth.login"  # Assurez-vous que cela pointe vers votre route de connexion
 
-    app.register_blueprint(auth)
-    app.register_blueprint(main)
+    app.register_blueprint(auth, url_prefix='/api/auth')
+    app.register_blueprint(main, url_prefix='/api')
 
     return app
