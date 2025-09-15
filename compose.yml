@@ -1,0 +1,62 @@
+x-env:
+  timezone: &tz "Europe/Paris"
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/app/backend
+    working_dir: /app/backend
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+      - redis
+    environment:
+      - FLASK_APP=app:app
+    command: flask run --host=0.0.0.0 --port=5000
+    ports:
+      - "5000:5000"
+  frontend:
+    build: ./frontend
+    working_dir: /app
+    environment:
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=true
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+  db:
+    image: bitnami/postgresql:15.9.0
+    restart: on-failure:3
+    volumes:
+      - postgres_data:/bitnami/postgresql
+    env_file:
+      - ./.env
+    environment:
+      POSTGRESQL_DATABASE: ${POSTGRES_DB}
+      POSTGRESQL_USERNAME: ${POSTGRES_USER}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
+      ALLOW_EMPTY_PASSWORD: "False"
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+  celery:
+    build: ./backend
+    volumes:
+      - ./backend:/app/backend
+    working_dir: /app/backend
+    command: celery -A celery_worker.celery worker --loglevel=info
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - ./backend/.env
+volumes:
+  postgres_data:

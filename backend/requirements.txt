@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+psycopg2-binary
+Flask-JWT-Extended
+Flask-Migrate
+Flask-Cors
+celery
+redis
+passlib
+python-dotenv
+pytest
