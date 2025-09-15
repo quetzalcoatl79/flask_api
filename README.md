@@ -6,7 +6,7 @@ Architecture de développement complète prête pour extension (auth JWT, tâche
 
 ```bash
 # SSH
-git clone git@github.com:VOTRE_ORG/VOTRE_REPO.git flask_fullstack_starter
+git clone https://github.com/quetzalcoatl79/flask_api.git flask_fullstack_starter
 # HTTPS
 git clone https://github.com/VOTRE_ORG/VOTRE_REPO.git flask_fullstack_starter
 cd flask_fullstack_starter
