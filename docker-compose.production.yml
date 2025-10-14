@@ -1,0 +1,126 @@
+x-env:
+  timezone: &tz "Europe/Paris"
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites-available:/etc/nginx/sites-available
+      - ./nginx/ssl:/etc/ssl
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    working_dir: /app/backend
+    env_file:
+      - .env.production
+    depends_on:
+      - db
+      - redis
+    environment:
+      - FLASK_APP=app:app
+      - FLASK_ENV=production
+    command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 app:app
+    expose:
+      - "5000"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    working_dir: /app
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    expose:
+      - "3000"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+      - ./backups:/backups
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    expose:
+      - "5432"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data_prod:/data
+    expose:
+      - "6379"
+    networks:
+      - app-network
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    volumes:
+      - ./backend:/app/backend
+    working_dir: /app/backend
+    command: celery -A celery_worker.celery worker --loglevel=info --concurrency=4
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - .env.production
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    volumes:
+      - ./backend:/app/backend
+    working_dir: /app/backend
+    command: celery -A celery_worker.celery beat --loglevel=info
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - .env.production
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+
+networks:
+  app-network:
+    driver: bridge

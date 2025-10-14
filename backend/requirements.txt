@@ -9,3 +9,4 @@ redis
 passlib
 python-dotenv
 pytest
+gunicorn

@@ -1,228 +1,217 @@
-# Starter Fullstack Flask + Next.js + Postgres + Redis + Celery
+# Flask API avec Frontend Next.js - Multi-Environment
 
-Architecture de développement complète prête pour extension (auth JWT, tâches asynchrones, healthcheck, UI moderne). Ce README couvre l'installation, l'exploitation en local via Docker, les migrations, et les commandes utiles sur macOS, Linux et Windows.
+Une application complète avec backend Flask et frontend Next.js, configurée pour le développement et la production.
 
-## 1. Cloner le projet
+## 🏗️ Architecture
+
+- **Backend**: Flask API avec Celery pour les tâches asynchrones
+- **Frontend**: Application Next.js React
+- **Base de données**: PostgreSQL
+- **Cache/Queue**: Redis  
+- **Proxy inverse**: Nginx (production seulement)
+- **Conteneurisation**: Docker & Docker Compose
+
+## 🌍 Environnements Disponibles
+
+### 🔧 Environnement de Développement
+- **Accès**: http://localhost:3000 (frontend) et http://localhost:5000 (backend)
+- **Fonctionnalités**: Hot reload, mode debug, accès direct aux ports
+
+### 🚀 Environnement de Production  
+- **Accès**: https://yourapp.com (frontend) et https://api.yourapp.com (backend)
+- **Fonctionnalités**: SSL/TLS, optimisations production, Nginx, sécurité
+
+## ⚡ Démarrage Rapide
+
+### Développement
 
 ```bash
-# SSH
-git clone https://github.com/quetzalcoatl79/flask_api.git flask_fullstack_starter
-# HTTPS
-git clone https://github.com/VOTRE_ORG/VOTRE_REPO.git flask_fullstack_starter
-cd flask_fullstack_starter
+# 1. Copier le fichier d'environnement
+cp .env.development .env.development
+
+# 2. Modifier la configuration (si nécessaire)
+nano .env.development
+
+# 3. Démarrer l'environnement de développement
+make dev-start
 ```
 
-Si vous utilisiez un autre répertoire, adaptez les chemins dans les commandes ci-dessous.
+Votre application sera accessible sur:
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
 
-## 2. Structure résumée
+### Production
 
-```
-backend/
-  app.py
-  routes.py
-  models.py
-  extensions.py
-  celery_worker.py
-  create_tables.py
-frontend/
-  app/
-compose.yml
-```
-
-## 3. Prérequis
-
-- Docker & Docker Compose (v2+)
-- Git
-- (Optionnel) Python 3.11+ local si vous voulez lancer le backend hors Docker
-- (Optionnel) Node.js 20+ local si vous voulez lancer le frontend hors Docker
-
-## 4. Variables d'environnement backend
-Copier `.env.example` en `.env` à la racine puis ajuster :
 ```bash
-cp .env.example .env  # Windows PowerShell: copy .env.example .env
+# 1. Copier le fichier d'environnement
+cp .env.production .env.production
+
+# 2. Configurer votre domaine et secrets
+nano .env.production
+
+# 3. Placer vos certificats SSL
+cp votre-certificat.crt nginx/ssl/yourapp.com.crt
+cp votre-cle.key nginx/ssl/yourapp.com.key
+
+# 4. Déployer en production
+make prod-deploy
 ```
-Copier ensuite `backend/.env.example` si vous lancez le backend isolé :
+
+## 📋 Commandes Disponibles
+
+### Développement
 ```bash
-cp backend/.env.example backend/.env
+make dev-start      # Démarrer l'environnement de développement
+make dev-stop       # Arrêter l'environnement de développement  
+make dev-logs       # Voir les logs de développement
 ```
-Variables clefs (voir `.env.example`) :
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-- `SQLALCHEMY_DATABASE_URI` (côté backend) 
-- `SECRET_KEY`, `JWT_SECRET_KEY`, `APP_VERSION`
-- `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`
-Pour un lancement hors Docker backend local : ajuster l'URI Postgres en pointant sur `localhost` si vous exposez le port (5432:5432) et installez les dépendances Python.
 
-## 5. Lancer l'environnement (Docker)
-
-docker compose up -d --build
+### Production
 ```bash
-docker compose up -d --build
+make prod-deploy    # Déployer en production
+make prod-stop      # Arrêter l'environnement de production
+make prod-logs      # Voir les logs de production
+make backup-db      # Sauvegarder la base de données
 ```
 
-Services exposés :
-- API Flask: http://localhost:5000
-- Frontend Next.js: http://localhost:3000
-- Redis: 6379 (interne, exposé pour debug)
-- Postgres: interne (volume `postgres_data`)
-
-Logs temps réel :
+### Maintenance
 ```bash
-docker compose logs -f backend
-# ou tout
-docker compose logs -f
+make clean          # Nettoyer les ressources Docker
+make health         # Vérifier l'état des services
 ```
 
-Arrêt :
+## 🔧 Configuration
+
+### Variables d'Environnement
+
+#### Développement (.env.development)
+- Ports exposés directement (3000, 5000, 5432, 6379)
+- Mode debug activé
+- Hot reload enabled
+- Mots de passe simples pour le développement
+
+#### Production (.env.production)  
+- **IMPORTANT**: Modifiez ces valeurs avant le déploiement:
+  - `DOMAIN=yourapp.com` → votre domaine réel
+  - `POSTGRES_PASSWORD` → mot de passe fort
+  - `SECRET_KEY` → clé secrète forte
+  - `JWT_SECRET_KEY` → clé JWT forte
+
+### SSL/TLS pour la Production
+
+Placez vos certificats SSL dans `nginx/ssl/`:
 ```bash
-docker compose down
+nginx/ssl/yourapp.com.crt
+nginx/ssl/yourapp.com.key
 ```
 
-Arrêt + purge volumes (PERTE DE DONNÉES) :
+Ou utilisez Let's Encrypt:
 ```bash
-docker compose down -v
+certbot certonly --standalone -d yourapp.com -d api.yourapp.com
+cp /etc/letsencrypt/live/yourapp.com/fullchain.pem nginx/ssl/yourapp.com.crt
+cp /etc/letsencrypt/live/yourapp.com/privkey.pem nginx/ssl/yourapp.com.key
 ```
 
-## 6. Première initialisation base de données
-Deux approches :
+## 📁 Structure du Projet
 
-### 6.1 Création rapide (dev) `create_tables.py`
+```
+flask_api/
+├── backend/                    # API Flask
+│   ├── Dockerfile.dev         # Dockerfile développement
+│   ├── Dockerfile.prod        # Dockerfile production
+│   └── ...
+├── frontend/                   # App Next.js
+│   ├── Dockerfile.dev         # Dockerfile développement  
+│   ├── Dockerfile.prod        # Dockerfile production
+│   └── ...
+├── nginx/                      # Configuration Nginx
+│   ├── nginx.conf             # Config principale
+│   ├── sites-available/       # Config des sites
+│   └── ssl/                   # Certificats SSL
+├── scripts/                    # Scripts de déploiement
+├── .env.development           # Config développement
+├── .env.production            # Config production
+├── docker-compose.development.yml
+├── docker-compose.production.yml
+├── Makefile                   # Raccourcis de commandes
+└── DEPLOYMENT.md              # Documentation détaillée
+```
+
+## 🔒 Sécurité en Production
+
+- **Chiffrement SSL/TLS** pour toutes les communications
+- **En-têtes de sécurité** (HSTS, X-Frame-Options, etc.)
+- **Limitation du taux de requêtes** pour prévenir les abus
+- **Utilisateurs non-root** dans les conteneurs
+- **Gestion des secrets** via variables d'environnement
+- **Configuration CORS** pour l'accès API
+
+## 📊 Surveillance
+
 ```bash
-docker compose exec backend flask shell -c "from create_tables import *"
-# ou plus explicitement
-docker compose exec backend python create_tables.py
+# Vérifier l'état des services
+make health
+
+# Voir les logs
+make dev-logs    # Développement
+make prod-logs   # Production
+
+# Vérification manuelle de santé
+curl http://localhost:5000/health              # Développement
+curl https://api.yourapp.com/health           # Production
 ```
 
-### 6.2 Migrations (Alembic / Flask-Migrate)
-Créer une révision initiale :
+## 🗄️ Gestion de la Base de Données
+
+### Migrations
 ```bash
-docker compose exec backend flask db init  # seulement la première fois
-docker compose exec backend flask db migrate -m "init"
-docker compose exec backend flask db upgrade
+# Développement
+docker-compose -f docker-compose.development.yml exec backend flask db migrate -m "Description"
+docker-compose -f docker-compose.development.yml exec backend flask db upgrade
+
+# Production  
+docker-compose -f docker-compose.production.yml exec backend flask db upgrade
 ```
 
-Si le dossier `migrations/` existe déjà, ne pas ré-exécuter `flask db init`.
-
-## 7. Cycle Auth de test
-
-1. Register
+### Sauvegardes
 ```bash
-curl -X POST http://localhost:5000/register \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"demo","email":"demo@example.com","password":"pass123"}'
-```
-2. Login
-```bash
-curl -X POST http://localhost:5000/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"demo","password":"pass123"}'
-```
-Réponse exemple :
-```json
-{"access_token":"...","refresh_token":"..."}
-```
-3. Requête protégée `/me`
-```bash
-curl http://localhost:5000/me -H "Authorization: Bearer VOTRE_ACCESS_TOKEN"
+# Créer une sauvegarde
+make backup-db
+
+# Restaurer une sauvegarde
+docker-compose -f docker-compose.production.yml exec -T db psql -U postgres -d flask_api_prod < backups/fichier_sauvegarde.sql
 ```
 
-## 8. Endpoint Health
-```bash
-curl http://localhost:5000/health | jq
-```
-Champs : `api`, `db`, `celery`, `status` (ok/degraded/down), `version`, `uptime_seconds`, `startup_grace`.
+## 🚨 Dépannage
 
-## 9. Tâches Celery
-La tâche de test `ping` :
-```bash
-docker compose exec backend python -c "from celery_worker import ping; print(ping.delay().get(timeout=5))"
-```
+### Problèmes Courants
 
-## 10. Développement sans Docker (optionnel)
+1. **Conflits de ports**:
+   ```bash
+   netstat -tulpn | grep :3000
+   netstat -tulpn | grep :5000
+   ```
 
-### Backend local
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate  # Windows PowerShell: .venv\\Scripts\\Activate.ps1
-pip install -r requirements.txt
-export FLASK_APP=app:app  # Windows CMD: set FLASK_APP=app:app
-flask run --port 5000
-```
-Assurez-vous de lancer redis & postgres autrement (Docker isolé ou services locaux).
+2. **Problèmes de base de données**:
+   ```bash
+   docker-compose -f docker-compose.development.yml logs db
+   ```
 
-### Frontend local
-```bash
-cd frontend
-npm install
-npm run dev
-```
+3. **Redémarrage complet**:
+   ```bash
+   make clean
+   make dev-start
+   ```
 
-## 11. Commandes Docker utiles
+## 📖 Documentation Complète
 
-| Objectif | Commande |
-|----------|----------|
-| Rebuild sans cache | `docker compose build --no-cache` |
-| Redémarrer un service | `docker compose restart backend` |
-| Shell dans le backend | `docker compose exec backend bash` |
-| Inspecter la DB | `docker compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB` |
-| Lister containers | `docker compose ps` |
-| Nettoyer images dangling | `docker image prune -f` |
-
-## 12. Reset Postgres propre (changement d'ENV ou schema irrécupérable)
-1. Sauvegarder si besoin :
-```bash
-docker compose exec db pg_dump -U $POSTGRES_USER -d $POSTGRES_DB > dump.sql
-```
-2. Stop + purge volume :
-```bash
-docker compose down
-docker volume rm $(docker volume ls -q | grep postgres_data)
-# Si grep non dispo sous PowerShell : docker volume rm flask_api_postgres_data (nom exact via docker volume ls)
-```
-3. Relancer :
-```bash
-docker compose up -d --build
-```
-4. Recréer tables (`create_tables.py` ou migrations).
-
-## 13. Sécurité (évolutions à prévoir)
-- Rotation et durée de vie courte access token
-- Refresh token en cookie HttpOnly + rotation anti-rejeu
-- Blacklist / table de révocation (logout réel)
-- Rate limiting (Flask-Limiter + Redis)
-- CSP / Headers sécurité (Flask-Talisman ou manuel)
-
-## 14. Tests
-Lancer les tests (si `pytest` installé dans container) :
-```bash
-docker compose exec backend pytest -q
-```
-
-## 15. Variables clés à adapter pour PROD
-| Variable | Rôle | Remarques |
-|----------|------|-----------|
-| `SECRET_KEY` | Sessions Flask | Générer valeur aléatoire forte |
-| `JWT_SECRET_KEY` | Signature JWT | Différente de SECRET_KEY |
-| `SQLALCHEMY_DATABASE_URI` | Connexion DB | Utiliser utilisateur dédié applicatif |
-| `CELERY_BROKER_URL` | Broker | Redis ou RabbitMQ prod dédié |
-| `CELERY_RESULT_BACKEND` | Résultats | Optionnel si fire-and-forget |
-| `APP_VERSION` | Version affichée | Synchroniser CI/CD |
-
-## 16. Troubleshooting Rapide
-| Problème | Cause probable | Solution |
-|----------|----------------|----------|
-| `relation "user" does not exist` | Tables non créées | Exécuter migrations ou script create_tables |
-| 401 sur /me | JWT manquant/expiré | Relogin, vérifier header Authorization |
-| Celery KO dans /health | Worker pas prêt | Vérifier logs `docker compose logs -f celery` |
-| Postgres role errors | Volume ancien + nouvelles variables | Reset volume (section 12) |
-| Front ne voit pas auth | Token pas dans localStorage / pas d'événement | Vérifier login + event `auth-changed` |
-
-## 17. Roadmap potentielle
-- Rate limiting + quotas
-- Observabilité (Prometheus exporter, OpenTelemetry)
-- Blacklist tokens & rotation
-- UI monitoring tâches Celery
-- Multi-env (docker-compose.override.yml prod/staging)
+Voir `DEPLOYMENT.md` pour la documentation détaillée incluant:
+- Configuration avancée de Nginx
+- Procédures de déploiement complètes
+- Gestion des certificats SSL
+- Surveillance et maintenance
+- Workflow de déploiement
 
 ---
-Bon build !
+
+**Bon développement ! 🚀**

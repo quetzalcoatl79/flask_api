@@ -1,0 +1,96 @@
+x-env:
+  timezone: &tz "Europe/Paris"
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app/backend
+    working_dir: /app/backend
+    env_file:
+      - .env.development
+    depends_on:
+      - db
+      - redis
+    environment:
+      - FLASK_APP=app:app
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    command: flask run --host=0.0.0.0 --port=5000 --debug
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    env_file:
+      - .env.development
+    environment:
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=true
+      - NODE_ENV=development
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15-alpine
+    restart: on-failure:3
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    env_file:
+      - .env.development
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - app-network
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app/backend
+    working_dir: /app/backend
+    command: celery -A celery_worker.celery worker --loglevel=debug
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - .env.development
+    networks:
+      - app-network
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+
+networks:
+  app-network:
+    driver: bridge
