@@ -16,11 +16,36 @@ export default function NavBar() {
   const router = useRouter();
 
   function fetchUser(token: string | null) {
-    if (!token) { setUser(null); return; }
+    if (!token) { 
+      setUser(null); 
+      setAuthed(false);
+      return; 
+    }
     fetch('http://localhost:5000/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setUser(d); })
-      .catch(() => {});
+      .then(r => {
+        if (r.ok) {
+          return r.json();
+        } else if (r.status === 422 || r.status === 401) {
+          // Token invalide ou expiré - nettoyer le localStorage
+          localStorage.removeItem('access_token');
+          setUser(null);
+          setAuthed(false);
+          return null;
+        }
+        return null;
+      })
+      .then(d => { 
+        if (d) {
+          setUser(d);
+          setAuthed(true);
+        }
+      })
+      .catch(() => {
+        // En cas d'erreur de réseau ou autre, nettoyer aussi
+        localStorage.removeItem('access_token');
+        setUser(null);
+        setAuthed(false);
+      });
   }
 
   function syncAuth() {

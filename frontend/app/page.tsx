@@ -36,14 +36,26 @@ export default function Home() {
   // Charge API + utilisateur initial (avec retries)
   const loadMe = useCallback((attempt: number = 1) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-    if (!token) { setMe(null); return; }
+    if (!token) { setMe(null); setAuthError(''); return; }
     axios.get('http://localhost:5000/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => { setMe(res.data); setAuthError(''); })
-      .catch(() => {
-        if (attempt < 3) {
+      .then(res => { 
+        setMe(res.data); 
+        setAuthError(''); 
+      })
+      .catch(error => {
+        // Vérifier le type d'erreur
+        if (error.response && (error.response.status === 422 || error.response.status === 401)) {
+          // Token invalide ou expiré - nettoyer immédiatement
+          localStorage.removeItem('access_token');
+          setMe(null);
+          setAuthError('');
+          // Dispatcher un événement pour que les autres composants se mettent à jour
+          window.dispatchEvent(new Event('auth-changed'));
+        } else if (attempt < 3) {
+          // Erreur de réseau ou autre - retry
           setTimeout(() => loadMe(attempt + 1), attempt * 400);
         } else {
-          setAuthError('Session expirée');
+          setAuthError('Erreur de connexion');
           setMe(null);
         }
       });

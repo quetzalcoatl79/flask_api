@@ -10,13 +10,13 @@ if not exist ".env.development" (
     exit /b 1
 )
 
-REM Start development containers
+REM Start development containers with explicit env file
 echo 📦 Building and starting development containers...
-docker-compose -f docker-compose.development.yml up -d --build
+docker-compose -f docker-compose.development.yml --env-file .env.development up -d --build
 
 REM Wait for services to be ready
 echo ⏳ Waiting for services to be ready...
-timeout /t 10 /nobreak > nul
+ping 127.0.0.1 -n 11 > nul
 
 REM Check if services are running
 echo 🔍 Checking service status...
